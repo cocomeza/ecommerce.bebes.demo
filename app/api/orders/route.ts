@@ -6,14 +6,14 @@
 
 import { NextResponse } from 'next/server';
 import { validateAndCreateOrder } from '@/lib/order';
-import type { OrderItemInput } from '@/lib/types';
+import type { CreateOrderItemInput } from '@/lib/types';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { customer_phone, items } = body as {
       customer_phone?: string;
-      items?: OrderItemInput[];
+      items?: CreateOrderItemInput[];
     };
 
     if (!customer_phone || typeof customer_phone !== 'string' || !customer_phone.trim()) {
@@ -30,28 +30,26 @@ export async function POST(request: Request) {
       );
     }
 
-    const validItems: OrderItemInput[] = [];
+    const validItems: CreateOrderItemInput[] = [];
     for (const it of items) {
       if (
         typeof it?.product_id === 'string' &&
         typeof it?.variant_id === 'string' &&
         typeof it?.quantity === 'number' &&
         it.quantity > 0 &&
-        typeof it?.price === 'number' &&
-        it.price >= 0
+        true
       ) {
         validItems.push({
           product_id: it.product_id,
           variant_id: it.variant_id,
           quantity: it.quantity,
-          price: it.price,
         });
       }
     }
 
     if (validItems.length !== items.length) {
       return NextResponse.json(
-        { error: 'Cada producto debe tener cantidad (número positivo) y precio válidos' },
+        { error: 'Cada producto debe tener product_id, variant_id y cantidad (número positivo)' },
         { status: 400 }
       );
     }

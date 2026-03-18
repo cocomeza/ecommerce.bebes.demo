@@ -39,7 +39,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
   const handleSendWhatsApp = async () => {
     if (!phone) {
-      alert('Por favor ingresa un número de teléfono');
+      toast.error('Por favor ingresá un número de teléfono');
       return;
     }
 
@@ -53,8 +53,13 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
       toast.success(`Pedido #${orderNumber} guardado. Redirigiendo a WhatsApp.`);
       window.open(url, '_blank');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Error al guardar el pedido. Intenta de nuevo.';
-      toast.error(message);
+      const rawMessage = error instanceof Error ? error.message : 'Error al guardar el pedido. Intenta de nuevo.';
+      const lower = rawMessage.toLowerCase();
+      const friendly =
+        lower.includes('stock') || lower.includes('insuficiente')
+          ? 'No hay stock suficiente para una o más variantes. Revisá el carrito y volvé a intentar.'
+          : rawMessage;
+      toast.error(friendly);
     } finally {
       setIsSubmitting(false);
     }

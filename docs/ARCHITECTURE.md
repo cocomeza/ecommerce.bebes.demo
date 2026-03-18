@@ -113,9 +113,12 @@ hooks/
 - **Reads:** `lib/api.ts` – getProducts, getProductById, getProductVariants, getOrders, getSuppliers. Used by pages and admin.
 - **Writes (admin):** Same file – createProduct, updateProduct, deleteProduct, createProductVariant, updateProductVariant, updateOrderStatus, createSupplier, updateSupplier, deleteSupplier.
 - **Order creation:** Only via **POST /api/orders** (Next.js route). Route:
-  1. Parses body (customer_phone, items: { product_id, variant_id, quantity, price }).
+  1. Parses body (customer_phone, items: { product_id, variant_id, quantity }).
   2. Calls `validateAndCreateOrder()` from `lib/order.ts`.
-  3. `validateAndCreateOrder()`: validate stock for all items → insert order → insert order_items → decrement stock per variant (WHERE stock >= quantity); if any decrement fails, delete order + order_items and throw.
+  3. `validateAndCreateOrder()`: calls a Supabase Postgres RPC (`create_order_and_decrement_stock`) that atomically:
+     - valida stock,
+     - crea `orders` + `order_items` (precio calculado en el backend),
+     - descuenta stock en una sola transacción.
 
 ---
 
@@ -123,10 +126,7 @@ hooks/
 
 - **Storage:** Stock lives in `product_variants.stock`.
 - **Reservation:** No reservation table; stock is decremented at order creation only.
-- **Decrement:** After inserting order + order_items, for each item:  
-  `UPDATE product_variants SET stock = stock - quantity WHERE id = variant_id AND stock >= quantity`.  
-  If `rowCount === 0`, rollback (delete order and order_items) and throw.
-- **Validation before order:** Before creating the order, fetch current stock for each variant and ensure `stock >= quantity` for all; otherwise return a clear error (e.g. “Insufficient stock for Product X, size Y”).
+- **Atomicity:** The critical flow is executed inside Postgres via RPC so we avoid race conditions (overselling) under concurrent checkouts.
 
 ---
 
@@ -135,11 +135,8 @@ hooks/
 1. Client: Cart + phone → POST /api/orders with `{ customer_phone, items }`.
 2. API: Parse and validate body.
 3. `validateAndCreateOrder(phone, items)`:
-   - Generate unique `order_number` (e.g. timestamp + random).
-   - Validate stock for each item (query current stock); if any insufficient, throw with details.
-   - Insert `orders` row (order_number, customer_phone, total_price, status: 'pending').
-   - Insert all `order_items`.
-   - For each item: decrement variant stock (WHERE stock >= quantity); if any update affects 0 rows, delete the new order and order_items, then throw.
+   - Calls Supabase RPC `create_order_and_decrement_stock(p_customer_phone, p_items)`.
+   - Postgres validates stock, creates `orders` + `order_items`, computes prices from `products.retail_price`, and decrements stock atomically.
 4. Return created order (and order_number) to client.
 5. Client: show success, open WhatsApp, clear cart.
 
@@ -153,14 +150,14 @@ hooks/
 | **Productos** | Table: image, name, category, prices, stock (by variant), low-stock badge. Add / Edit / Delete product and variants. |
 | **Pedidos**   | Table: order number, customer, total, status, date. Status dropdown updates via `updateOrderStatus`. Optional: view order detail (items). |
 | **Proveedores** | Table: name, phone, email, address. Add / Edit / Delete. |
-| **Configuración** | Placeholder (store name, WhatsApp number, low-stock threshold, etc.) for future use. |
+| **Configuración** | Save WhatsApp number and low-stock threshold (stored in `store_settings`). |
 
 ---
 
 ## 9. Production readiness
 
 - Env: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (and optional service role for admin-only ops).
-- Stock: Validated before order; decrement with conditional update to avoid race conditions; rollback on failure.
-- Orders: Created only via API; unique order_number; persisted before opening WhatsApp.
+- Stock: Validated + decremented atomically inside Postgres via RPC (`create_order_and_decrement_stock`).
+- Orders: Created only via API; pricing computed in backend; order persisted before opening WhatsApp.
 - UI: Loading and error states on list/detail and checkout; toasts for success/error.
 - Admin: All modules wired to real data; no mock data in production path.

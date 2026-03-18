@@ -47,11 +47,10 @@ export interface OrderItem {
 }
 
 /** Payload for creating an order (items without order_id) */
-export interface OrderItemInput {
+export interface CreateOrderItemInput {
   product_id: string;
   variant_id: string;
   quantity: number;
-  price: number;
 }
 
 export interface Supplier {
@@ -61,4 +60,11 @@ export interface Supplier {
   email: string;
   address: string;
   notes: string;
+}
+
+export interface StoreSettings {
+  id?: string;
+  whatsapp_number: string;
+  low_stock_threshold: number;
+  updated_at?: string;
 }

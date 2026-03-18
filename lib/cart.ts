@@ -101,7 +101,6 @@ export const saveOrderToDatabase = async (phone: string): Promise<string> => {
     product_id: item.product.id,
     variant_id: item.variant.id,
     quantity: item.quantity,
-    price: item.product.retail_price,
   }));
 
   const res = await fetch('/api/orders', {

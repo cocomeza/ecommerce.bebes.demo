@@ -54,6 +54,15 @@ create table if not exists public.suppliers (
   notes text
 );
 
+-- Store settings (config del negocio)
+-- Usamos una tabla tipo “singleton” en la app: lee el último registro por updated_at.
+create table if not exists public.store_settings (
+  id uuid primary key default gen_random_uuid(),
+  whatsapp_number text not null default '',
+  low_stock_threshold integer not null default 5 check (low_stock_threshold >= 0),
+  updated_at timestamptz not null default now()
+);
+
 -- Enable RLS if you use it (optional)
 -- alter table public.products enable row level security;
 -- alter table public.product_variants enable row level security;

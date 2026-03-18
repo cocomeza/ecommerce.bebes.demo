@@ -2,10 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { LayoutDashboard, Package, ShoppingBag, Users, Settings, LogOut } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
 
   const menuItems = [
     { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Inicio' },
@@ -46,7 +50,21 @@ export function AdminSidebar() {
       </nav>
 
       <div className="p-4 border-t border-gray-200">
-        <button type="button" className="flex items-center space-x-3 px-4 py-3 w-full text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors">
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              const { error } = await supabase.auth.signOut();
+              if (error) throw error;
+              toast.success('Sesión cerrada.');
+              router.replace('/admin/login');
+            } catch (err) {
+              const message = err instanceof Error ? err.message : 'No se pudo cerrar sesión';
+              toast.error(message);
+            }
+          }}
+          className="flex items-center space-x-3 px-4 py-3 w-full text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors"
+        >
           <LogOut className="h-5 w-5" />
           <span>Cerrar sesión</span>
         </button>

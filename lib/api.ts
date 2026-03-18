@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { Product, ProductVariant, Order, OrderItem, Supplier } from './types';
+import { Product, ProductVariant, Order, OrderItem, Supplier, StoreSettings } from './types';
 
 export async function getProducts(): Promise<Product[]> {
   const { data, error } = await supabase
@@ -101,6 +101,15 @@ export async function updateProductVariant(
   return data;
 }
 
+export async function deleteProductVariant(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('product_variants')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+}
+
 export async function getOrders(): Promise<Order[]> {
   const { data, error } = await supabase
     .from('orders')
@@ -118,13 +127,26 @@ export async function getOrdersWithItems(): Promise<Order[]> {
     .select(
       `
       *,
-      order_items (*)
+      order_items (
+        id,
+        order_id,
+        product_id,
+        variant_id,
+        quantity,
+        price,
+        product:products ( name ),
+        variant:product_variants ( size, color )
+      )
     `
     )
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return (data || []) as Order[];
+  const raw = (data || []) as Array<any>;
+  return raw.map((o) => ({
+    ...o,
+    items: Array.isArray(o.order_items) ? o.order_items : o.items,
+  })) as Order[];
 }
 
 export async function updateOrderStatus(id: string, status: string): Promise<Order> {
@@ -179,4 +201,58 @@ export async function deleteSupplier(id: string): Promise<void> {
     .eq('id', id);
 
   if (error) throw error;
+}
+
+export async function getStoreSettings(): Promise<Pick<StoreSettings, 'whatsapp_number' | 'low_stock_threshold'>> {
+  const { data, error } = await supabase
+    .from('store_settings')
+    .select('whatsapp_number, low_stock_threshold, updated_at')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  return {
+    whatsapp_number: data?.whatsapp_number ?? '',
+    low_stock_threshold: data?.low_stock_threshold ?? 5,
+  };
+}
+
+export async function upsertStoreSettings(
+  updates: Pick<StoreSettings, 'whatsapp_number' | 'low_stock_threshold'>
+): Promise<Pick<StoreSettings, 'whatsapp_number' | 'low_stock_threshold'>> {
+  const current = await getStoreSettings().catch(() => null);
+
+  // No row yet: insert one
+  if (!current) {
+    const { data, error } = await supabase
+      .from('store_settings')
+      .insert([
+        {
+          whatsapp_number: updates.whatsapp_number,
+          low_stock_threshold: updates.low_stock_threshold,
+        },
+      ])
+      .select('whatsapp_number, low_stock_threshold')
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  // Update: for singleton-like table, update the latest row
+  const { data, error } = await supabase
+    .from('store_settings')
+    .update({
+      whatsapp_number: updates.whatsapp_number,
+      low_stock_threshold: updates.low_stock_threshold,
+    })
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .select('whatsapp_number, low_stock_threshold')
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ?? updates;
 }
