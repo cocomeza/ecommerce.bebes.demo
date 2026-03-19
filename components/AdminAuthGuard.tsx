@@ -29,7 +29,9 @@ export function AdminAuthGuard({ children }: { children: ReactNode }) {
 
     checkSession();
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         if (cancelled) return;
         if (!session) {

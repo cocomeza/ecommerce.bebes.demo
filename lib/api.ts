@@ -1,12 +1,38 @@
 import { supabase } from './supabase';
 import { Product, ProductVariant, Order, OrderItem, Supplier, StoreSettings } from './types';
 
-export async function getProducts(): Promise<Product[]> {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .order('created_at', { ascending: false });
+/** Si la columna is_featured no existe en DB, Supabase puede devolver distintos códigos/mensajes. */
+function looksLikeMissingColumn(err: unknown, column: string): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const e = err as Record<string, unknown>;
+  const code = String(e?.code ?? '').toLowerCase();
+  const message = String(e?.message ?? e?.details ?? '').toLowerCase();
+  const col = column.toLowerCase();
+  return (
+    code === '42703' ||
+    code === 'pgrst301' ||
+    message.includes(col) ||
+    message.includes('column') ||
+    message.includes('does not exist')
+  );
+}
 
+export async function getProducts(options?: { featuredOnly?: boolean }): Promise<Product[]> {
+  const baseQuery = () =>
+    supabase.from('products').select('*').order('created_at', { ascending: false });
+
+  if (options?.featuredOnly) {
+    const { data, error } = await baseQuery().eq('is_featured', true);
+    if (error && looksLikeMissingColumn(error, 'is_featured')) {
+      const fallback = await baseQuery();
+      if (fallback.error) throw fallback.error;
+      return fallback.data || [];
+    }
+    if (error) throw error;
+    return data || [];
+  }
+
+  const { data, error } = await baseQuery();
   if (error) throw error;
   return data || [];
 }
@@ -41,27 +67,53 @@ export async function getAllVariants(): Promise<ProductVariant[]> {
   return data || [];
 }
 
+/** Campos que no deben enviarse al insert/update si la columna no existe aún. */
+const FEATURED_KEY = 'is_featured';
+
+function withoutFeatured<T extends Record<string, unknown>>(obj: T): Omit<T, 'is_featured'> {
+  const { [FEATURED_KEY]: _, ...rest } = obj;
+  return rest;
+}
+
+/** Actualiza solo is_featured. Si la columna no existe (migración no aplicada), no hace nada. */
+export async function setProductFeatured(productId: string, value: boolean): Promise<void> {
+  const { error } = await supabase
+    .from('products')
+    .update({ is_featured: value })
+    .eq('id', productId);
+  if (error) {
+    // Columna inexistente o otro error: no romper la app, solo no persistir destacado.
+    return;
+  }
+}
+
 export async function createProduct(product: Omit<Product, 'id' | 'created_at'>): Promise<Product> {
+  const payload = withoutFeatured(product as Record<string, unknown>);
   const { data, error } = await supabase
     .from('products')
-    .insert([product])
+    .insert([payload])
     .select()
     .single();
-
   if (error) throw error;
-  return data;
+  const created = data as Product;
+  if (product.is_featured) {
+    await setProductFeatured(created.id, true);
+  }
+  return created;
 }
 
 export async function updateProduct(id: string, updates: Partial<Product>): Promise<Product> {
-  const { data, error } = await supabase
-    .from('products')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  const payload = withoutFeatured(updates as Record<string, unknown>);
+  if (Object.keys(payload).length > 0) {
+    const { error } = await supabase.from('products').update(payload).eq('id', id);
+    if (error) throw error;
+  }
+  if (typeof updates.is_featured === 'boolean') {
+    await setProductFeatured(id, updates.is_featured);
+  }
+  const product = await getProductById(id);
+  if (!product) throw new Error('Producto no encontrado');
+  return product;
 }
 
 export async function deleteProduct(id: string): Promise<void> {

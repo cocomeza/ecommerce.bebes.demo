@@ -9,6 +9,7 @@ create table if not exists public.products (
   category text not null,
   retail_price numeric not null check (retail_price >= 0),
   wholesale_price numeric not null check (wholesale_price >= 0),
+  is_featured boolean not null default false,
   images text[] default '{}',
   created_at timestamptz default now()
 );

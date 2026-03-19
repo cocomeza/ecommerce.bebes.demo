@@ -8,6 +8,8 @@ export interface Product {
   retail_price: number;
   wholesale_price: number;
   images: string[];
+  /** Si es true, el producto aparece en "Productos Destacados" del Home. */
+  is_featured?: boolean;
   created_at?: string;
 }
 

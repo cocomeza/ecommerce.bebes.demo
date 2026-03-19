@@ -32,6 +32,7 @@ export default function AdminProducts() {
     category: string;
     retail_price: number;
     wholesale_price: number;
+    is_featured: boolean;
     imagesText: string; // lista separada por comas
   };
 
@@ -48,6 +49,7 @@ export default function AdminProducts() {
     category: '',
     retail_price: 0,
     wholesale_price: 0,
+    is_featured: false,
     imagesText: '',
   };
 
@@ -117,6 +119,7 @@ export default function AdminProducts() {
       category: product.category,
       retail_price: Number(product.retail_price) || 0,
       wholesale_price: Number(product.wholesale_price) || 0,
+      is_featured: Boolean(product.is_featured),
       imagesText: (product.images || []).join(', '),
     });
     setEditingVariantId(null);
@@ -137,6 +140,7 @@ export default function AdminProducts() {
           category: productForm.category,
           retail_price: productForm.retail_price,
           wholesale_price: productForm.wholesale_price,
+          is_featured: productForm.is_featured,
           images,
         });
         toast.success('Producto creado.');
@@ -151,6 +155,7 @@ export default function AdminProducts() {
           category: productForm.category,
           retail_price: productForm.retail_price,
           wholesale_price: productForm.wholesale_price,
+          is_featured: productForm.is_featured,
           images,
         });
         toast.success('Producto actualizado.');
@@ -307,6 +312,7 @@ export default function AdminProducts() {
                               const lowStock = isLowStock(product.id);
                               const imageUrl = product.images?.[0];
                               const isSelected = selectedProductId === product.id && mode === 'edit';
+                              const featured = Boolean(product.is_featured);
 
                               return (
                                 <tr
@@ -335,6 +341,11 @@ export default function AdminProducts() {
                                       <div className="font-medium text-gray-900 min-w-0 truncate max-w-[200px]">
                                         {product.name}
                                       </div>
+                                      {featured && (
+                                        <span className="ml-2 inline-flex items-center rounded-full bg-pink-100 text-pink-700 px-2 py-0.5 text-[11px] font-semibold">
+                                          Destacado
+                                        </span>
+                                      )}
                                     </div>
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">
@@ -406,6 +417,25 @@ export default function AdminProducts() {
                           }
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300 min-h-[96px]"
                         />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="inline-flex items-center gap-3 select-none">
+                          <input
+                            type="checkbox"
+                            checked={productForm.is_featured}
+                            onChange={(e) =>
+                              setProductForm((p) => ({ ...p, is_featured: e.target.checked }))
+                            }
+                            className="h-4 w-4 rounded border-gray-300 text-pink-600 focus:ring-pink-300"
+                          />
+                          <span className="text-sm font-medium text-gray-700">
+                            Mostrar como <span className="font-bold">destacado</span> en el Home
+                          </span>
+                        </label>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Los productos destacados aparecen en la sección “Productos Destacados”.
+                        </p>
                       </div>
 
                       <div className="space-y-1">

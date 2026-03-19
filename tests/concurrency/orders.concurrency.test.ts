@@ -30,7 +30,8 @@ describe('Concurrency: orders do not oversell', () => {
   });
 
   it.skipIf(!canRun)('only up to stock requests succeed', async () => {
-    if (!seed) throw new Error('seed missing');
+    const s = seed;
+    if (!s) throw new Error('seed missing');
 
     const { POST } = await import('@/app/api/orders/route');
 
@@ -41,7 +42,7 @@ describe('Concurrency: orders do not oversell', () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             customer_phone: '+5491112345678',
-            items: [{ product_id: seed.productId, variant_id: seed.variantId, quantity: 1 }],
+            items: [{ product_id: s.productId, variant_id: s.variantId, quantity: 1 }],
           }),
         })
       );
@@ -60,7 +61,7 @@ describe('Concurrency: orders do not oversell', () => {
     expect(successCount).toBeLessThanOrEqual(2);
     expect(successCount + failCount).toBe(fulfilled.length);
 
-    const remaining = await getVariantStock(seed.variantId);
+    const remaining = await getVariantStock(s.variantId);
     expect(remaining).toBeGreaterThanOrEqual(0);
     expect(remaining).toBe(2 - successCount);
   });
