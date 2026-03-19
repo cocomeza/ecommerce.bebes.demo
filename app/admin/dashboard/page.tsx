@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AdminSidebar } from '@/components/AdminSidebar';
 import { DashboardStats } from '@/components/DashboardStats';
 import { getProducts, getOrders, getSuppliers, getAllVariants, getStoreSettings } from '@/lib/api';
 import { LOCALE } from '@/lib/constants';
 import { AdminAuthGuard } from '@/components/AdminAuthGuard';
+import { AdminShell } from '@/components/admin/AdminShell';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -44,10 +44,8 @@ export default function AdminDashboard() {
 
   return (
     <AdminAuthGuard>
-      <div className="flex min-h-screen bg-gray-50">
-        <AdminSidebar />
-
-        <main className="flex-1 p-8">
+      <AdminShell>
+        <main className="flex-1 p-4 sm:p-8">
           <div className="max-w-7xl mx-auto space-y-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Inicio</h1>
@@ -129,7 +127,7 @@ export default function AdminDashboard() {
             </div>
           </div>
         </main>
-      </div>
+      </AdminShell>
     </AdminAuthGuard>
   );
 }

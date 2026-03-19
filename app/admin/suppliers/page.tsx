@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AdminSidebar } from '@/components/AdminSidebar';
 import {
   createSupplier,
   deleteSupplier,
@@ -12,6 +11,7 @@ import type { Supplier } from '@/lib/types';
 import { Plus, Trash2, Pencil } from 'lucide-react';
 import { AdminAuthGuard } from '@/components/AdminAuthGuard';
 import { toast } from 'sonner';
+import { AdminShell } from '@/components/admin/AdminShell';
 
 export default function AdminSuppliers() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -117,10 +117,8 @@ export default function AdminSuppliers() {
 
   return (
     <AdminAuthGuard>
-      <div className="flex min-h-screen bg-gray-50">
-        <AdminSidebar />
-
-        <main className="flex-1 p-8">
+      <AdminShell>
+        <main className="flex-1 p-4 sm:p-8">
         <div className="max-w-7xl mx-auto space-y-8">
           <div className="flex items-center justify-between">
             <div>
@@ -286,7 +284,7 @@ export default function AdminSuppliers() {
             )}
         </div>
         </main>
-      </div>
+      </AdminShell>
     </AdminAuthGuard>
   );
 }

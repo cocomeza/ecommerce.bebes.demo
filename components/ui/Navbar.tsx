@@ -55,6 +55,12 @@ export function Navbar() {
               <Link href="/products" className="text-gray-700 hover:text-pink-500 transition-colors">
                 Productos
               </Link>
+              <Link
+                href="/admin/login"
+                className="text-gray-700 hover:text-pink-500 transition-colors"
+              >
+                Admin
+              </Link>
               <button
                 onClick={() => setIsCartOpen(true)}
                 className="relative p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -103,6 +109,13 @@ export function Navbar() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Productos
+              </Link>
+              <Link
+                href="/admin/login"
+                className="block py-2 text-gray-700 hover:text-pink-500"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Admin
               </Link>
               <button
                 onClick={() => {

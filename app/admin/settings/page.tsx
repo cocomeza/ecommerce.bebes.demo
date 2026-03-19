@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AdminSidebar } from '@/components/AdminSidebar';
 import { AdminAuthGuard } from '@/components/AdminAuthGuard';
 import { getStoreSettings, upsertStoreSettings } from '@/lib/api';
 import { LOCALE } from '@/lib/constants';
 import { toast } from 'sonner';
+import { AdminShell } from '@/components/admin/AdminShell';
 
 export default function AdminSettings() {
   const [loading, setLoading] = useState(true);
@@ -53,10 +53,8 @@ export default function AdminSettings() {
 
   return (
     <AdminAuthGuard>
-      <div className="flex min-h-screen bg-gray-50">
-        <AdminSidebar />
-
-        <main className="flex-1 p-8">
+      <AdminShell>
+        <main className="flex-1 p-4 sm:p-8">
           <div className="max-w-2xl mx-auto">
             <h1 className="text-3xl font-bold text-gray-900">Configuración</h1>
             <p className="text-gray-600 mt-2 mb-8">
@@ -110,7 +108,7 @@ export default function AdminSettings() {
             </div>
           </div>
         </main>
-      </div>
+      </AdminShell>
     </AdminAuthGuard>
   );
 }

@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AdminSidebar } from '@/components/AdminSidebar';
 import { getOrdersWithItems, updateOrderStatus } from '@/lib/api';
 import type { Order, OrderItem } from '@/lib/types';
 import { LOCALE } from '@/lib/constants';
 import { AdminAuthGuard } from '@/components/AdminAuthGuard';
 import { toast } from 'sonner';
 import { Eye } from 'lucide-react';
+import { AdminShell } from '@/components/admin/AdminShell';
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -40,10 +40,8 @@ export default function AdminOrders() {
 
   return (
     <AdminAuthGuard>
-      <div className="flex min-h-screen bg-gray-50">
-        <AdminSidebar />
-
-        <main className="flex-1 p-8">
+      <AdminShell>
+        <main className="flex-1 p-4 sm:p-8">
         <div className="max-w-7xl mx-auto space-y-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Pedidos</h1>
@@ -212,7 +210,7 @@ export default function AdminOrders() {
             </div>
           </div>
         )}
-      </div>
+      </AdminShell>
     </AdminAuthGuard>
   );
 }

@@ -1,13 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, Package, ShoppingBag, Users, Settings, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 
-export function AdminSidebar() {
+export function AdminSidebar({
+  className,
+  onNavigate,
+}: {
+  className?: string;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -20,7 +25,7 @@ export function AdminSidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col">
+    <aside className={['w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col', className].filter(Boolean).join(' ')}>
       <div className="p-6 border-b border-gray-200">
         <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-500 to-blue-500 bg-clip-text text-transparent">
           Panel de administración
@@ -36,6 +41,7 @@ export function AdminSidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onNavigate}
               className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
                 isActive
                   ? 'bg-pink-50 text-pink-600 font-semibold'
@@ -58,6 +64,7 @@ export function AdminSidebar() {
               if (error) throw error;
               toast.success('Sesión cerrada.');
               router.replace('/admin/login');
+              onNavigate?.();
             } catch (err) {
               const message = err instanceof Error ? err.message : 'No se pudo cerrar sesión';
               toast.error(message);
