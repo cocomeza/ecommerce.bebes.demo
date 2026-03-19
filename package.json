@@ -7,7 +7,11 @@
     "build": "npx next build",
     "start": "npx next start",
     "lint": "npx next lint",
-    "typecheck": "npx tsc --noEmit"
+    "typecheck": "npx tsc --noEmit",
+    "test:api": "npx vitest run tests/api",
+    "test:integration": "npx vitest run tests/integration tests/concurrency",
+    "test:e2e": "npx playwright test",
+    "test": "npm run test:api"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -69,5 +73,12 @@
     "typescript": "5.2.2",
     "vaul": "^0.9.9",
     "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/supertest": "^7.2.0",
+    "supertest": "^7.2.2",
+    "tsx": "^4.21.0",
+    "vitest": "^4.1.0"
   }
 }
